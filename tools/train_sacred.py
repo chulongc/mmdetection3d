@@ -19,18 +19,21 @@ from mmdet.apis import set_random_seed, train_detector
 
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
-ex = Experiment("centerpoint_train")
-ex.observers.append(FileStorageObserver("my_runs"))
+
+from mmdet3d.experiment import experiment
+experiment.init_exp()
+from mmdet3d.hooks import SacredLoggerHook  # register SacredLoggerHook
+
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
-@ex.config
+@experiment.ex.config
 def config_1():
     config = {
-        'config': './configs/centerpoint/centerpoint_0075voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus.py',
+        'config': './configs/centerpoint/centerpoint_02pillar_second_secfpn_4x8_cyclic_20e_nus.py',
         'work_dir': '',
         'resume_from': '',
         'no_validate': False,
@@ -43,57 +46,12 @@ def config_1():
         'autoscale_lr': False,
     }
 
-@ex.capture
-def get_config(config):
+@experiment.ex.capture
+def get_config(config, _run):
     return AttrDict(config)
 
 
-# def parse_args():
-#     parser = argparse.ArgumentParser(description='Train a detector')
-#     parser.add_argument('config', help='train config file path')
-#     parser.add_argument('--work-dir', help='the dir to save logs and models')
-#     parser.add_argument(
-#         '--resume-from', help='the checkpoint file to resume from')
-#     parser.add_argument(
-#         '--no-validate',
-#         action='store_true',
-#         help='whether not to evaluate the checkpoint during training')
-#     group_gpus = parser.add_mutually_exclusive_group()
-#     group_gpus.add_argument(
-#         '--gpus',
-#         type=int,
-#         help='number of gpus to use '
-#         '(only applicable to non-distributed training)')
-#     group_gpus.add_argument(
-#         '--gpu-ids',
-#         type=int,
-#         nargs='+',
-#         help='ids of gpus to use '
-#         '(only applicable to non-distributed training)')
-#     parser.add_argument('--seed', type=int, default=0, help='random seed')
-#     parser.add_argument(
-#         '--deterministic',
-#         action='store_true',
-#         help='whether to set deterministic options for CUDNN backend.')
-#     parser.add_argument(
-#         '--options', nargs='+', action=DictAction, help='arguments in dict')
-#     parser.add_argument(
-#         '--launcher',
-#         choices=['none', 'pytorch', 'slurm', 'mpi'],
-#         default='none',
-#         help='job launcher')
-#     parser.add_argument('--local_rank', type=int, default=0)
-#     parser.add_argument(
-#         '--autoscale-lr',
-#         action='store_true',
-#         help='automatically scale lr with the number of gpus')
-#     args = parser.parse_args()
-#     if 'LOCAL_RANK' not in os.environ:
-#         os.environ['LOCAL_RANK'] = str(args.local_rank)
-
-#     return args
-
-@ex.automain
+@experiment.ex.automain
 def main():
     args = get_config()
     cfg = Config.fromfile(args.config)
